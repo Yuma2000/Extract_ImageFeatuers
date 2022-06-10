@@ -6,6 +6,7 @@ python test_convnext.py BG_335
 import cv2, skimage
 import numpy as np
 import sys, torch
+import torch.nn as nn
 from model_extract_features import ConvNextEncoder
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -50,8 +51,9 @@ def preprocess_frame(image, target_height=224, target_width=224):
     image /= np.array([0.229, 0.224, 0.225])
     return image
 
+
 def extract_features():
-  path_keyframes_txt = "./all_frames/" + video_name +"_keyframes.txt"
+  path_keyframes_txt = "/home/kouki/Codex/all_frames/" + video_name +"_keyframes.txt"
   with open(path_keyframes_txt) as f:
       lines = f.readlines()
   counted_keyframes = len(lines)
@@ -61,7 +63,7 @@ def extract_features():
       key_frame_num = int(lines[i])
       print("frame :{}".format(key_frame_num))
 
-      image = cv2.imread('./all_frames/' + video_name + '/' + str(i) +
+      image = cv2.imread('/home/kouki/Codex/all_frames/' + video_name + '/' + str(i) +
                          '-' + str(key_frame_num) + '.png')
       # 前処理
       image = preprocess_frame(image)
@@ -77,7 +79,22 @@ def extract_features():
 
 def main():
     features_array = extract_features()
-    features_array[0]
+    cosine_similarity = nn.CosineSimilarity(dim=1, eps=1e-6)
+    input1 = features_array[0]
+    max_cosine_output = -2
+    similar_frame_num = -1
+    for i in range(counted_keyframes):
+        if i == 0:
+            continue
+        print(i)
+        input2 = features_array[i]
+        cosine_output = cosine_similarity(input1, input2)
+        if cosine_output > max_cosine_output:
+            max_cosine_output = cosine_output
+            similar_frame_num = i
+
+    print(similar_frame_num)
+
 
 if __name__ == "__main__":
     main()
